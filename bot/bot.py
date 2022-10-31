@@ -6,6 +6,7 @@ import vk_api
 from vk_api import VkUpload
 from vk_api.longpoll import VkLongPoll
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
+from vk_api.longpoll import VkEventType
 
 
 class Bot:
@@ -15,6 +16,7 @@ class Bot:
         self.longpoll = VkLongPoll(
             self.authorize)  # Выбираем тип используемого API - Long Poll API, бывает еще Callback API
         self.upload = VkUpload(self.authorize)  # Загрузчик изображений на сервер в ВК
+        self.VkEventType = VkEventType
 
     @staticmethod
     def __get_keyboard_for_bot():
@@ -45,3 +47,28 @@ class Bot:
         access_key = response['access_key']
         attachment = f'photo{owner_id}_{photo_id}'  # _{access_key}
         return attachment
+
+    def get_attachment(self, photo_link_list: list):
+        attachment_list = []
+        for link in photo_link_list:
+            uploaded_photo = self.upload_photo(link)
+            attachment_list.append(uploaded_photo)
+        attchment = ','.join(attachment_list)
+        return attchment
+
+    def get_user_info(self, user_id):
+        user_info = self.authorize.method('users.get', {"user_ids": user_id, 'fields': 'city, bdate, sex'})[0]
+        return user_info['first_name'], user_info['last_name'], user_info['city']['title'], user_info['bdate'], user_info['sex']
+
+    def send_candidate(self, sender):
+        # вызываем функцию подборакандидата, получаем данные и ссылки
+        photo_list = ['https://vdp.mycdn.me/getImage?id=411588037337&idx=0&thumbType=32',
+                      'https://www.mam4.ru/media/upload/user/5422/19/6170.jpg',
+                      'https://avatanplus.com/files/resources/mid/5ab5736f0579416254cae9ae.png',
+                      ]
+        candidate_id = 'candidate_id'
+        fio = "fio"
+        link = "link"
+        attachment_photos = self.get_attachment(photo_list)
+        self.write_message(sender, f'Вот отличный кандидат:\n{fio}\n{link}', attachment=attachment_photos)
+        return candidate_id, fio, link, photo_list
